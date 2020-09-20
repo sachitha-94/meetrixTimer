@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import jwt_decode from "jwt-decode";
 import TimerComponent from './TimerComponent';
 import TotalTime from './TotalTime';
 
 function App() {
 
-  const [seconds, setSeconds] = useState(0);
   const [T1Seconds, setT1Seconds] = useState(0);
   const [T2Seconds, setT2Seconds] = useState(0);
   const [T3Seconds, setT3Seconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
 
   const [isT1Active, setIsT1Active] = useState(false);
   const [isT2Active, setIsT2Active] = useState(false);
   const [isT3Active, setIsT3Active] = useState(false);
+
+  const [isUserAuthorized, setIsUserAuthorized] = useState(false);
+  const [user, setUser] = useState({});
 
   function toggleT1() {
     setIsT1Active(!isT1Active);
@@ -75,9 +76,34 @@ function App() {
     return () => clearInterval(interval);
   }, [isT3Active, T3Seconds]);
 
+  useEffect(() => {
+    if (!isUserAuthorized) {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const token = urlParams.get('jwt');
+      if (token) {
+        const decoded = jwt_decode(token);
+        setUser(decoded);
+        setIsUserAuthorized(true);
+      } else {
+        setIsUserAuthorized(false);
+      }
+    }
 
+
+  }, [])
+
+  const renderUser = () => {
+    if (isUserAuthorized && user) {
+      return <div>
+        <span className="span">{user.username}</span>
+      </div>
+    }
+    return <div><span className="span">User not authorized <a href="/?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.-HIjgp9bgavIuyBIwPofEJZtsJzm-2z7YCJjS4Nr0fs" >click here</a> </span></div>
+  }
   return (
     <div className="app">
+      {renderUser()}
       <TotalTime seconds={T1Seconds + T2Seconds + T3Seconds} />
       <TimerComponent seconds={T1Seconds} isActive={isT1Active} reset={resetT1} toggle={toggleT1} />
       <TimerComponent seconds={T2Seconds} isActive={isT2Active} reset={resetT2} toggle={toggleT2} />
